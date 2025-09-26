@@ -1,0 +1,173 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+
+function App() {
+  const [students, setStudents] = useState([]);
+  const [name, setName] = useState("");
+  const [rollNo, setRollNo] = useState("");
+  const [course, setCourse] = useState("");
+  const [grade, setGrade] = useState("");
+  const [editId, setEditId] = useState(null);
+
+  const API_URL = "http://localhost:5000/api/students"; // Backend API
+
+  // Fetch all students
+  const fetchStudents = async () => {
+    try {
+      const res = await axios.get(API_URL);
+      setStudents(res.data);
+    } catch (err) {
+      console.error("Error fetching students:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  // Add or Update Student
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editId) {
+        await axios.put(`${API_URL}/${editId}`, {
+          name,
+          rollNo,
+          course,
+          grade,
+        });
+      } else {
+        await axios.post(API_URL, {
+          name,
+          rollNo,
+          course,
+          grade,
+        });
+      }
+      setName("");
+      setRollNo("");
+      setCourse("");
+      setGrade("");
+      setEditId(null);
+      fetchStudents();
+    } catch (err) {
+      console.error("Error saving student:", err);
+    }
+  };
+
+  // Edit Student
+  const handleEdit = (student) => {
+    setName(student.name);
+    setRollNo(student.rollNo);
+    setCourse(student.course);
+    setGrade(student.grade);
+    setEditId(student._id);
+  };
+
+  // Delete Student
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      fetchStudents();
+    } catch (err) {
+      console.error("Error deleting student:", err);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
+      <h1 className="text-3xl font-bold text-blue-600 mb-6">
+        Student Grading System
+      </h1>
+
+      {/* Form */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-xl p-6 w-full max-w-md mb-6"
+      >
+        <input
+          type="text"
+          placeholder="Name"
+          className="border p-2 w-full mb-3 rounded"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Roll No"
+          className="border p-2 w-full mb-3 rounded"
+          value={rollNo}
+          onChange={(e) => setRollNo(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Course"
+          className="border p-2 w-full mb-3 rounded"
+          value={course}
+          onChange={(e) => setCourse(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Grade"
+          className="border p-2 w-full mb-3 rounded"
+          value={grade}
+          onChange={(e) => setGrade(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
+        >
+          {editId ? "Update Student" : "Add Student"}
+        </button>
+      </form>
+
+      {/* Student List */}
+      <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-3xl">
+        <h2 className="text-xl font-semibold mb-4">Student Records</h2>
+        {students.length === 0 ? (
+          <p>No students found.</p>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="p-2 border">Name</th>
+                <th className="p-2 border">Roll No</th>
+                <th className="p-2 border">Course</th>
+                <th className="p-2 border">Grade</th>
+                <th className="p-2 border">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student._id} className="text-center">
+                  <td className="p-2 border">{student.name}</td>
+                  <td className="p-2 border">{student.rollNo}</td>
+                  <td className="p-2 border">{student.course}</td>
+                  <td className="p-2 border">{student.grade}</td>
+                  <td className="p-2 border">
+                    <button
+                      onClick={() => handleEdit(student)}
+                      className="bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(student._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+export default App;
